@@ -58,7 +58,7 @@ Laravel と Docker を用いて構築した、シンプルな CRM（顧客管理
 ## セットアップ手順
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/KEN01-dev/laravel-crm.git>
 cd crm
 
 cp .env.example .env
