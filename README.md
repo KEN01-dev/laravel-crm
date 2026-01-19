@@ -1,59 +1,102 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# CRM Application（Laravel + Docker）
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 概要
+Laravel と Docker を用いて構築した、シンプルな CRM（顧客管理）アプリケーションです。  
+顧客情報の管理に加え、権限管理・検索・CSV出力・監査ログ機能を実装しています。
 
-## About Laravel
+業務利用を想定し、再現性・保守性・運用面を重視して設計しています。
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 主な機能
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 認証・権限
+- Laravel Breeze による認証
+- ユーザー権限：admin / staff  
+  - admin：全顧客を閲覧・編集可能  
+  - staff：自身が担当する顧客のみ編集可能（Policy制御）
 
-## Learning Laravel
+### Customers（顧客管理）
+- 一覧表示
+- キーワード検索（name / company / email / phone）
+- ステータス絞り込み
+- ページネーション
+- 編集（Edit）
+- CSVエクスポート（検索条件を反映）
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 監査ログ（Activity Logs）
+- Customer の 作成 / 更新 / 削除 を自動記録
+- 記録内容：
+  - 操作者（user_id）
+  - 操作種別（created / updated / deleted）
+  - 対象データ（Customer）
+  - 変更前 / 変更後（before / after）
+  - IPアドレス
+- 監査ログ一覧画面にて検索・確認可能
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+※ customers テーブルは 最新状態、activity_logs テーブルは 履歴を保持します。
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 技術スタック
+- PHP / Laravel
+- Laravel Breeze（認証）
+- MySQL
+- Docker / Docker Compose
+- Blade / Tailwind CSS
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## 環境構成（Docker）
+- app（Laravel / PHP）
+- db（MySQL）
+- node（Vite / フロントエンドビルド）
+- phpMyAdmin（DB確認用）
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## セットアップ手順
 
-## Code of Conduct
+```bash
+git clone <repository-url>
+cd crm
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+cp .env.example .env
 
-## Security Vulnerabilities
+docker compose up -d --build
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+docker compose exec app composer install
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate --seed
 
-## License
+docker compose exec node npm install
+docker compose exec node npm run build
+テストユーザー
+権限	Email	Password
+admin	admin@example.com	password
+staff	staff@example.com	password
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+※ シーダーで作成しています。
+
+画面一覧
+/login ログイン
+
+/customers 顧客一覧
+
+/customers/{id}/edit 顧客編集
+
+/activity-logs 監査ログ一覧
+
+設計ポイント
+Policy による権限制御
+
+Observer による監査ログ自動記録
+
+検索条件を維持した CSV 出力
+
+Docker によるローカル再現性の担保
+
+UI は Breeze 標準を活かし、過度な装飾は行っていません
+
+備考
+本アプリケーションは学習・案件提出用途として作成しています。
